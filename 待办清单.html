@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>待办清单</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "PingFang SC", "Microsoft YaHei", "Helvetica Neue", Arial, sans-serif;
+      background: #f5f7fa;
+      color: #303133;
+      line-height: 1.5;
+    }
+
+    /* 整页居中，最大宽度 600px */
+    .app {
+      width: 100%;
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 36px 16px 48px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 28px;
+      font-weight: 600;
+      text-align: center;
+      letter-spacing: 1px;
+    }
+
+    .subtitle {
+      margin: 8px 0 0;
+      text-align: center;
+      color: #909399;
+      font-size: 14px;
+    }
+
+    /* 输入区卡片 */
+    .composer {
+      margin-top: 24px;
+      padding: 16px;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+    }
+
+    .composer-row {
+      display: flex;
+      gap: 10px;
+    }
+
+    .composer input {
+      flex: 1;
+      min-width: 0;
+      height: 40px;
+      padding: 0 12px;
+      border: 1px solid #dcdfe6;
+      border-radius: 8px;
+      font-size: 15px;
+      color: #303133;
+      outline: none;
+      transition: border-color 0.2s ease;
+    }
+
+    .composer input:focus {
+      border-color: #409EFF;
+    }
+
+    .composer input::placeholder {
+      color: #c0c4cc;
+    }
+
+    button {
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+    }
+
+    .add-btn {
+      flex-shrink: 0;
+      height: 40px;
+      padding: 0 18px;
+      background: #409EFF;
+      color: #fff;
+    }
+
+    .add-btn:hover {
+      background: #66b1ff;
+    }
+
+    /* 空输入提示 */
+    .hint {
+      min-height: 22px;
+      margin: 8px 0 0;
+      color: #f56c6c;
+      font-size: 13px;
+    }
+
+    .hint:empty {
+      margin-top: 0;
+    }
+
+    /* 筛选栏 */
+    .filters {
+      display: flex;
+      gap: 8px;
+      margin: 16px 0;
+    }
+
+    .filter-btn {
+      flex: 1;
+      height: 36px;
+      background: #fff;
+      color: #606266;
+      border: 1px solid #e4e7ed;
+    }
+
+    .filter-btn:hover {
+      color: #409EFF;
+      border-color: #c6e2ff;
+    }
+
+    .filter-btn.active {
+      background: #409EFF;
+      color: #fff;
+      border-color: #409EFF;
+    }
+
+    .list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .group-toggle {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+      margin: 0;
+      padding: 8px 4px;
+      background: transparent;
+      color: #606266;
+      font-size: 14px;
+      font-weight: 600;
+      text-align: left;
+    }
+
+    .group-toggle:hover {
+      color: #409EFF;
+    }
+
+    .arrow {
+      flex-shrink: 0;
+      width: 14px;
+      color: #409EFF;
+      font-size: 12px;
+      line-height: 1;
+    }
+
+    .group-count {
+      color: #909399;
+      font-size: 12px;
+      font-weight: 400;
+    }
+
+    /* 折叠用网格行高过渡，避免高度突然跳变 */
+    .group-panel {
+      display: grid;
+      grid-template-rows: 0fr;
+      transition: grid-template-rows 0.28s ease;
+    }
+
+    .group.open .group-panel {
+      grid-template-rows: 1fr;
+    }
+
+    .group-inner {
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    .group-items {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin: 0;
+      padding: 4px 2px 12px;
+      list-style: none;
+    }
+
+    /* 单条待办卡片 */
+    .todo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 14px;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+      transition: box-shadow 0.2s ease, transform 0.2s ease;
+    }
+
+    .todo:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 18px rgba(64, 158, 255, 0.14);
+    }
+
+    .check {
+      flex-shrink: 0;
+      width: 22px;
+      height: 22px;
+      padding: 0;
+      border: 2px solid #dcdfe6;
+      border-radius: 50%;
+      background: #fff;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .check:hover {
+      border-color: #409EFF;
+    }
+
+    .todo.done .check {
+      background: #409EFF;
+      border-color: #409EFF;
+    }
+
+    /* 完成态勾号 */
+    .todo.done .check::after {
+      content: "";
+      width: 5px;
+      height: 9px;
+      margin-top: -2px;
+      border: solid #fff;
+      border-width: 0 2px 2px 0;
+      transform: rotate(45deg);
+    }
+
+    .body {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .text {
+      display: block;
+      font-size: 15px;
+      word-break: break-word;
+    }
+
+    .todo.done .text {
+      color: #c0c4cc;
+      text-decoration: line-through;
+    }
+
+    .delete-btn {
+      flex-shrink: 0;
+      height: 30px;
+      padding: 0 10px;
+      background: transparent;
+      color: #909399;
+    }
+
+    .delete-btn:hover {
+      color: #f56c6c;
+      background: #fef0f0;
+    }
+
+    .empty {
+      margin: 0;
+      padding: 40px 16px;
+      text-align: center;
+      color: #c0c4cc;
+      background: #fff;
+      border-radius: 12px;
+    }
+
+    .stats {
+      margin: 16px 0 0;
+      text-align: center;
+      color: #909399;
+      font-size: 13px;
+      white-space: pre-line;
+    }
+
+    @media (max-width: 480px) {
+      .app {
+        padding-top: 24px;
+      }
+
+      h1 {
+        font-size: 24px;
+      }
+
+      .composer-row {
+        flex-direction: column;
+      }
+
+      .add-btn {
+        width: 100%;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .group-panel {
+        transition: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header>
+      <h1>待办清单</h1>
+      <p class="subtitle">记录每天要完成的事</p>
+    </header>
+
+    <section class="composer">
+      <div class="composer-row">
+        <input id="todo-input" type="text" maxlength="200" placeholder="输入待办内容" autocomplete="off">
+        <button id="add-btn" class="add-btn" type="button">添加</button>
+      </div>
+      <p id="hint" class="hint" role="alert"></p>
+    </section>
+
+    <nav class="filters" aria-label="筛选待办">
+      <button class="filter-btn active" type="button" data-filter="all">全部</button>
+      <button class="filter-btn" type="button" data-filter="active">未完成</button>
+      <button class="filter-btn" type="button" data-filter="done">已完成</button>
+    </nav>
+
+    <div id="todo-list" class="list"></div>
+    <p id="empty" class="empty" hidden>暂无待办，快去添加吧</p>
+    <p id="stats" class="stats"></p>
+  </main>
+
+  <script>
+    // 本地存储键名；超过这个天数的记录在加载时删除
+    const STORAGE_KEY = "todo-list-items";
+    const KEEP_DAYS = 180;
+
+    const inputEl = document.getElementById("todo-input");
+    const addBtn = document.getElementById("add-btn");
+    const hintEl = document.getElementById("hint");
+    const listEl = document.getElementById("todo-list");
+    const emptyEl = document.getElementById("empty");
+    const statsEl = document.getElementById("stats");
+    const filterBtns = document.querySelectorAll(".filter-btn");
+
+    // 当前筛选：all 全部 / active 未完成 / done 已完成
+    let filter = "all";
+    let todos = loadTodos();
+    // 用户手动展开/收起过的日期；没记录的日期按“仅最新一天展开”处理
+    const groupOpen = {};
+
+    // 本地日期，格式 YYYY-MM-DD
+    function formatDate(date) {
+      const y = date.getFullYear();
+      const m = String(date.getMonth() + 1).padStart(2, "0");
+      const d = String(date.getDate()).padStart(2, "0");
+      return y + "-" + m + "-" + d;
+    }
+
+    function todayString() {
+      return formatDate(new Date());
+    }
+
+    // 只接受真实存在的 YYYY-MM-DD
+    function parseDate(value) {
+      if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
+      const parts = value.split("-");
+      const year = Number(parts[0]);
+      const month = Number(parts[1]);
+      const day = Number(parts[2]);
+      const date = new Date(year, month - 1, day);
+      if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) {
+        return null;
+      }
+      date.setHours(0, 0, 0, 0);
+      return date;
+    }
+
+    // 创建日距今天数；今天为 0，未来日期为负数
+    function ageInDays(dateStr) {
+      const created = parseDate(dateStr);
+      if (!created) return null;
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      return Math.round((today.getTime() - created.getTime()) / 86400000);
+    }
+
+    // 从 localStorage 读取。无日期的旧记录补上今天；超过 180 天的直接删掉并写回
+    function loadTodos() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return [];
+        const data = JSON.parse(raw);
+        if (!Array.isArray(data)) return [];
+
+        const today = todayString();
+        let changed = false;
+        const kept = [];
+
+        data.forEach(function (item) {
+          if (!item || typeof item.id !== "string" || typeof item.text !== "string") {
+            changed = true;
+            return;
+          }
+
+          let createdAt = item.createdAt;
+          if (!parseDate(createdAt)) {
+            createdAt = today;
+            changed = true;
+          }
+
+          const age = ageInDays(createdAt);
+          if (age === null || age > KEEP_DAYS) {
+            changed = true;
+            return;
+          }
+
+          kept.push({
+            id: item.id,
+            text: item.text,
+            done: !!item.done,
+            createdAt: createdAt
+          });
+        });
+
+        if (changed) {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(kept));
+        }
+        return kept;
+      } catch (err) {
+        return [];
+      }
+    }
+
+    function saveTodos() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(todos));
+    }
+
+    function addTodo() {
+      const text = inputEl.value.trim();
+      if (!text) {
+        hintEl.textContent = "请输入待办内容";
+        inputEl.focus();
+        return;
+      }
+
+      hintEl.textContent = "";
+      const createdAt = todayString();
+      groupOpen[createdAt] = true;
+      todos.unshift({
+        id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+        text: text,
+        done: false,
+        createdAt: createdAt
+      });
+      inputEl.value = "";
+      saveTodos();
+      render();
+      inputEl.focus();
+    }
+
+    function toggleTodo(id) {
+      todos.forEach(function (item) {
+        if (item.id === id) item.done = !item.done;
+      });
+      saveTodos();
+      render();
+    }
+
+    function deleteTodo(id) {
+      todos = todos.filter(function (item) {
+        return item.id !== id;
+      });
+      saveTodos();
+      render();
+    }
+
+    function setFilter(next) {
+      filter = next;
+      filterBtns.forEach(function (btn) {
+        btn.classList.toggle("active", btn.dataset.filter === filter);
+      });
+      render();
+    }
+
+    // 按当前筛选得到要展示的列表
+    function visibleTodos() {
+      if (filter === "active") {
+        return todos.filter(function (item) { return !item.done; });
+      }
+      if (filter === "done") {
+        return todos.filter(function (item) { return item.done; });
+      }
+      return todos;
+    }
+
+    // 按日期从新到旧分组
+    function groupTodos(items) {
+      const map = {};
+      items.forEach(function (item) {
+        if (!map[item.createdAt]) map[item.createdAt] = [];
+        map[item.createdAt].push(item);
+      });
+      return Object.keys(map).sort(function (a, b) {
+        return a < b ? 1 : -1;
+      }).map(function (date) {
+        return { date: date, items: map[date] };
+      });
+    }
+
+    // 没有手动切换过时，只有最新日期展开
+    function isGroupOpen(date, latestDate) {
+      if (Object.prototype.hasOwnProperty.call(groupOpen, date)) return groupOpen[date];
+      return date === latestDate;
+    }
+
+    function setGroupOpen(date, open) {
+      groupOpen[date] = open;
+      const section = listEl.querySelector('.group[data-date="' + date + '"]');
+      if (!section) return;
+      section.classList.toggle("open", open);
+      section.querySelector(".arrow").textContent = open ? "▼" : "▶";
+      const toggle = section.querySelector(".group-toggle");
+      toggle.setAttribute("aria-expanded", open ? "true" : "false");
+      section.querySelector(".group-panel").inert = !open;
+    }
+
+    function createTodoItem(item) {
+      const li = document.createElement("li");
+      li.className = "todo" + (item.done ? " done" : "");
+
+      const check = document.createElement("button");
+      check.className = "check";
+      check.type = "button";
+      check.setAttribute("aria-label", item.done ? "标为未完成" : "标为已完成");
+      check.addEventListener("click", function () {
+        toggleTodo(item.id);
+      });
+
+      const body = document.createElement("div");
+      body.className = "body";
+
+      const text = document.createElement("span");
+      text.className = "text";
+      text.textContent = item.text;
+      body.appendChild(text);
+
+      const del = document.createElement("button");
+      del.className = "delete-btn";
+      del.type = "button";
+      del.textContent = "删除";
+      del.addEventListener("click", function () {
+        deleteTodo(item.id);
+      });
+
+      li.appendChild(check);
+      li.appendChild(body);
+      li.appendChild(del);
+      return li;
+    }
+
+    function render() {
+      const visible = visibleTodos();
+      const groups = groupTodos(visible);
+      const latestDate = groups.length ? groups[0].date : "";
+      listEl.innerHTML = "";
+
+      groups.forEach(function (group) {
+        const open = isGroupOpen(group.date, latestDate);
+        const section = document.createElement("section");
+        section.className = "group" + (open ? " open" : "");
+        section.dataset.date = group.date;
+
+        const toggle = document.createElement("button");
+        toggle.className = "group-toggle";
+        toggle.type = "button";
+        toggle.setAttribute("aria-expanded", open ? "true" : "false");
+
+        const arrow = document.createElement("span");
+        arrow.className = "arrow";
+        arrow.setAttribute("aria-hidden", "true");
+        arrow.textContent = open ? "▼" : "▶";
+
+        const title = document.createElement("span");
+        title.textContent = group.date;
+
+        const count = document.createElement("span");
+        count.className = "group-count";
+        count.textContent = group.items.length + " 条";
+
+        toggle.appendChild(arrow);
+        toggle.appendChild(title);
+        toggle.appendChild(count);
+        toggle.addEventListener("click", function () {
+          setGroupOpen(group.date, !isGroupOpen(group.date, latestDate));
+        });
+
+        const panel = document.createElement("div");
+        panel.className = "group-panel";
+        panel.inert = !open;
+
+        const inner = document.createElement("div");
+        inner.className = "group-inner";
+
+        const items = document.createElement("ul");
+        items.className = "group-items";
+        group.items.forEach(function (item) {
+          items.appendChild(createTodoItem(item));
+        });
+
+        inner.appendChild(items);
+        panel.appendChild(inner);
+        section.appendChild(toggle);
+        section.appendChild(panel);
+        listEl.appendChild(section);
+      });
+
+      const isEmpty = visible.length === 0;
+      emptyEl.hidden = !isEmpty;
+      if (isEmpty) {
+        emptyEl.textContent = todos.length === 0
+          ? "暂无待办，快去添加吧"
+          : "当前筛选下暂无待办";
+      }
+
+      const doneCount = todos.filter(function (item) { return item.done; }).length;
+      const earliest = todos.reduce(function (min, item) {
+        if (!min || item.createdAt < min) return item.createdAt;
+        return min;
+      }, "");
+      statsEl.textContent = "一共 " + todos.length + " 条，已完成 " + doneCount + " 条\n最早记录日期：" + (earliest || "暂无");
+    }
+
+    addBtn.addEventListener("click", addTodo);
+
+    // 回车同样可以添加
+    inputEl.addEventListener("keydown", function (event) {
+      if (event.key === "Enter") addTodo();
+    });
+
+    inputEl.addEventListener("input", function () {
+      if (inputEl.value.trim()) hintEl.textContent = "";
+    });
+
+    filterBtns.forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        setFilter(btn.dataset.filter);
+      });
+    });
+
+    render();
+  </script>
+</body>
+</html>

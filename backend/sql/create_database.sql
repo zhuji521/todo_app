@@ -1,0 +1,9 @@
+# 仅建库 + 建账号，不改动任何表结构（适用于已有数据的服务器）
+CREATE DATABASE IF NOT EXISTS `todo_db`
+    DEFAULT CHARACTER SET utf8mb4
+    DEFAULT COLLATE utf8mb4_unicode_ci;
+
+CREATE USER IF NOT EXISTS 'todo'@'%' IDENTIFIED BY 'todo_pass_123';
+GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, INDEX, ALTER, REFERENCES
+    ON `todo_db`.* TO 'todo'@'%';
+FLUSH PRIVILEGES;

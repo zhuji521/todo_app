@@ -1,0 +1,549 @@
+/* 全页颜色和圆角。App.tsx 不写具体颜色，类名都从这里取。 */
+:root {
+  /* 页面底色，浅灰。 */
+  --bg: #f5f6f8;
+  /* 卡片底色，白色。 */
+  --card: #ffffff;
+  /* 主要文字颜色。 */
+  --text: #1f2329;
+  /* 次要文字：副标题、时间、空状态。 */
+  --muted: #6b7280;
+  /* 边框和分割线。 */
+  --line: #e6e8eb;
+  /* 主按钮和当前标签的蓝色。 */
+  --primary: #2f6fed;
+  /* 主按钮悬停时更深的蓝。 */
+  --primary-dark: #2559c4;
+  /* 删除按钮和错误提示的红。 */
+  --danger: #e5484d;
+  /* 完成状态、完成时间的绿。 */
+  --ok: #17a673;
+  /* 卡片圆角。 */
+  --radius: 12px;
+}
+
+/* 所有元素都按 border-box 计算宽高，padding 和 border 不会把盒子撑出父容器。 */
+* {
+  box-sizing: border-box;
+}
+
+/* 页面、body、React 的挂载点都撑满视口高度，避免底部出现一条意外的空白断层。 */
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  /* 去掉浏览器默认的 8 像素外边距。 */
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  /* 中文优先用微软雅黑，西文优先用系统界面字体。 */
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', Roboto, Arial,
+    sans-serif;
+  font-size: 14px;
+  /* 让 WebKit 浏览器的文字边缘更平滑。 */
+  -webkit-font-smoothing: antialiased;
+}
+
+/* 页面内容列。最大 1120 像素，宽屏时居中。 */
+.app {
+  max-width: 1120px;
+  margin: 0 auto;
+  /* 上 28、左右 20、下 48。底部留空是为了不被固定的提示条挡住。 */
+  padding: 28px 20px 48px;
+}
+
+/* 标题。只作用于顶栏里的 h1。 */
+.topbar h1 {
+  margin: 0 0 6px;
+  font-size: 24px;
+  /* 字间距稍微拉开。 */
+  letter-spacing: 0.5px;
+}
+
+/* 标题下面的一行说明。 */
+.subtitle {
+  margin: 0 0 20px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+/* 左列表、右历史的两列布局。 */
+.layout {
+  display: grid;
+  /* 左边占满剩余空间，右边固定 320 像素。minmax(0, 1fr) 让长文本不会把左列撑破。 */
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 16px;
+  /* 两列从顶部对齐，右栏不跟着左栏的高度被拉高。 */
+  align-items: start;
+}
+
+/* 左右两块白卡片共用的底、边框、圆角和内边距。 */
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  /* 很轻的阴影，把卡片和灰色背景分开。 */
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
+  padding: 16px;
+}
+
+/* ---------- 输入 ---------- */
+/* 添加框、搜索框、编辑框共用。 */
+.input {
+  /* 在横向 flex 里占据剩余宽度。 */
+  flex: 1;
+  /* 允许缩小到比内容更窄，否则长单词会把整行撑出去。 */
+  min-width: 0;
+  height: 38px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  /* 继承 body 的文字颜色。 */
+  color: inherit;
+  font-size: 14px;
+  /* 去掉浏览器聚焦时的默认外框，改用下面自己的阴影。 */
+  outline: none;
+  /* 边框和阴影的颜色变化用 0.15 秒过渡。 */
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+/* 输入框聚焦时改成蓝色边，并加一圈淡蓝阴影。 */
+.input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(47, 111, 237, 0.12);
+}
+
+/* 添加表单：输入框和“添加”按钮横排，中间留 10 像素。 */
+.create-row {
+  display: flex;
+  gap: 10px;
+}
+
+/* ---------- 按钮 ---------- */
+/* 所有按钮的共同尺寸和鼠标样式。 */
+.btn {
+  height: 38px;
+  padding: 0 16px;
+  /* 先放一条透明边，避免 ghost 按钮加上边框后高度跳动。 */
+  border: 1px solid transparent;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s, opacity 0.15s;
+  /* 按钮文字不换行。 */
+  white-space: nowrap;
+}
+
+/* 禁用时变淡，并且鼠标显示禁止符号。 */
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* 列表里的编辑、删除、分页使用的小按钮。 */
+.btn-sm {
+  height: 30px;
+  padding: 0 10px;
+  font-size: 13px;
+}
+
+/* 主操作：添加、保存。白字蓝底。 */
+.btn-primary {
+  background: var(--primary);
+  color: #fff;
+}
+
+/* 悬停时加深。禁用的按钮不加这个效果。 */
+.btn-primary:hover:not(:disabled) {
+  background: var(--primary-dark);
+}
+
+/* 次要按钮：刷新、取消、编辑、分页。白底灰边。 */
+.btn-ghost {
+  background: #fff;
+  border-color: var(--line);
+  color: var(--text);
+}
+
+.btn-ghost:hover:not(:disabled) {
+  border-color: #c9cdd4;
+  background: #fafbfc;
+}
+
+/* 删除按钮。红字，边框是很浅的红。 */
+.btn-danger {
+  background: #fff;
+  border-color: #f3c2c4;
+  color: var(--danger);
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: #fdf1f1;
+}
+
+/* ---------- 工具栏 ---------- */
+/* 筛选标签和搜索框的那一行。空间不够时允许换行。 */
+.toolbar {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin: 14px 0 10px;
+  flex-wrap: wrap;
+}
+
+/* 三个筛选按钮外面的灰色胶囊。 */
+.tabs {
+  display: flex;
+  gap: 6px;
+  background: #f2f3f5;
+  padding: 3px;
+  border-radius: 9px;
+}
+
+/* 单个筛选按钮。默认没有自己的底色，文字用次要色。 */
+.tab {
+  border: none;
+  background: transparent;
+  padding: 6px 12px;
+  border-radius: 7px;
+  font-size: 13px;
+  color: var(--muted);
+  cursor: pointer;
+  /* 文字和角标排成一行。 */
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* 当前选中的筛选。白底、深色字、加粗，并加一点阴影。 */
+.tab.active {
+  background: #fff;
+  color: var(--text);
+  font-weight: 600;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.08);
+}
+
+/* 标签上的数字角标。 */
+.tab-count {
+  font-size: 11px;
+  color: var(--muted);
+  background: #eceef1;
+  border-radius: 9px;
+  padding: 1px 6px;
+}
+
+/* 选中标签里的角标改成淡蓝底、蓝色字。 */
+.tab.active .tab-count {
+  background: #e6eefc;
+  color: var(--primary);
+}
+
+/* 搜索框不跟添加框一样占满整行，宽度大约 220 像素，空间不足时可以缩小。 */
+.search {
+  flex: 0 1 220px;
+  height: 34px;
+}
+
+/* “共 N 条”和刷新按钮的那一行。 */
+.list-head {
+  display: flex;
+  /* 文字靠左，按钮靠右。 */
+  justify-content: space-between;
+  align-items: center;
+  color: var(--muted);
+  font-size: 12px;
+  padding: 4px 2px 8px;
+}
+
+/* ---------- 列表 ---------- */
+/* 待办列表。去掉圆点和默认内外边距，只在顶部留一条线。 */
+.todo-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--line);
+}
+
+/* 一行待办：勾选框、正文、按钮横排，从顶部对齐。 */
+.todo-item {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 12px 2px;
+  border-bottom: 1px solid var(--line);
+}
+
+/* 已完成的正文加删除线，并改成次要颜色。 */
+.todo-item.done .text {
+  text-decoration: line-through;
+  color: var(--muted);
+}
+
+/* 勾选区域。真正的 checkbox 会被藏起来，看得见的是里面的 .box。 */
+.check {
+  /* 为里面绝对定位的 input 提供参照。 */
+  position: relative;
+  /* 不被 flex 压缩或拉宽。 */
+  flex: none;
+  width: 18px;
+  height: 18px;
+  /* 稍微下移，让方框和第一行文字垂直对齐。 */
+  margin-top: 2px;
+  cursor: pointer;
+}
+
+/* 原生勾选框铺满 18×18 的区域，但完全透明。这样点击位置仍然可用键盘聚焦。 */
+.check input {
+  position: absolute;
+  /* 上右下左都贴住父元素。 */
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+  margin: 0;
+}
+
+/* 画出来的圆角方框。 */
+.check .box {
+  display: block;
+  width: 18px;
+  height: 18px;
+  border: 1.5px solid #c9cdd4;
+  border-radius: 5px;
+  transition: all 0.15s;
+}
+
+/* 勾上以后，方框变成绿色。相邻选择器要求 .box 紧跟在被选中的 input 后面。 */
+.check input:checked + .box {
+  background: var(--ok);
+  border-color: var(--ok);
+}
+
+/* 用一个旋转过的边框模拟对勾，不需要图片。 */
+.check input:checked + .box::after {
+  content: '';
+  position: absolute;
+  left: 6px;
+  top: 2.5px;
+  width: 5px;
+  height: 9px;
+  /* 只保留右边和底边，再旋转，看起来就是一个勾。 */
+  border: 2px solid #fff;
+  border-top: 0;
+  border-left: 0;
+  transform: rotate(42deg);
+}
+
+/* 一行中间的正文区域，占据勾选框和按钮之间的全部宽度。 */
+.content {
+  flex: 1;
+  min-width: 0;
+}
+
+/* 待办正文。长句子在单词或中文边界换行，不溢出卡片。 */
+.text {
+  display: block;
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+/* 创建时间、完成时间、编号。空间不够时换行。 */
+.meta {
+  display: flex;
+  gap: 12px;
+  margin-top: 5px;
+  font-size: 11.5px;
+  color: var(--muted);
+  flex-wrap: wrap;
+}
+
+/* “完成 2026-...” 用绿色，和勾选框一致。 */
+.meta .ok {
+  color: var(--ok);
+}
+
+/* 编号弱化显示。 */
+.meta .id {
+  opacity: 0.7;
+}
+
+/* 编辑时的输入框、保存、取消横排。 */
+.edit-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+/* 编辑和删除两个按钮。不参与伸缩，避免被长正文挤没。 */
+.actions {
+  display: flex;
+  gap: 6px;
+  flex: none;
+}
+
+/* 列表为空、历史为空时的居中提示。 */
+.empty {
+  padding: 28px 0;
+  text-align: center;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+/* ---------- 分页 ---------- */
+/* 上一页、页码、下一页居中排成一行。 */
+.pager {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  padding-top: 14px;
+  color: var(--muted);
+  font-size: 12.5px;
+}
+
+/* ---------- 侧栏历史 ---------- */
+/* 侧栏标题。 */
+.side-card h2 {
+  margin: 0 0 4px;
+  font-size: 15px;
+}
+
+/* “按时间倒序，最近 30 条操作”。 */
+.hint {
+  margin: 0 0 12px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+/* 历史列表。超过 560 像素出现滚动条，不把整页拉得无限长。 */
+.log-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 560px;
+  overflow-y: auto;
+}
+
+/* 一条历史：左边是动作标签，右边是描述和时间。 */
+.log-list li {
+  display: flex;
+  gap: 8px;
+  padding: 8px 0;
+  /* 用虚线区分每一条，和左侧待办的实线分开。 */
+  border-bottom: 1px dashed var(--line);
+  font-size: 12.5px;
+}
+
+/* 描述在上，时间在下。 */
+.log-body {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+/* 流水正文可以换行。 */
+.log-detail {
+  color: var(--text);
+  word-break: break-word;
+  line-height: 1.45;
+}
+
+/* 流水时间，比正文更小、更淡。 */
+.log-time {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+/* 动作标签的共同外形。具体颜色由下面的 tag-xxx 覆盖。 */
+.tag {
+  flex: none;
+  height: 20px;
+  line-height: 20px;
+  padding: 0 7px;
+  border-radius: 6px;
+  font-size: 11px;
+  background: #f2f3f5;
+  color: var(--muted);
+}
+
+/* 新建：蓝。 */
+.tag-create {
+  background: #e8f1fe;
+  color: var(--primary);
+}
+
+/* 完成：绿。 */
+.tag-complete {
+  background: #e6f7f0;
+  color: var(--ok);
+}
+
+/* 删除：红。 */
+.tag-delete {
+  background: #fdecec;
+  color: var(--danger);
+}
+
+/* 改内容：橙。类名里的下划线和后端 action 的 update_content 一致。 */
+.tag-update_content {
+  background: #fff4e5;
+  color: #b25e09;
+}
+
+/* ---------- 提示 ---------- */
+/* 成功或失败提示。固定在视口底部中央，不占文档流。 */
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 32px;
+  /* 向左移自身宽度的一半，实现水平居中。 */
+  transform: translateX(-50%);
+  padding: 10px 18px;
+  border-radius: 10px;
+  font-size: 13px;
+  color: #fff;
+  background: #333a45;
+  box-shadow: 0 8px 24px rgba(16, 24, 40, 0.18);
+  /* 出现时从下方轻微升起。 */
+  animation: rise 0.18s ease-out;
+  /* 压在卡片和按钮之上。 */
+  z-index: 99;
+}
+
+/* 失败提示用红色。App.tsx 会加上 toast err 两个类。 */
+.toast.err {
+  background: var(--danger);
+}
+
+/* 成功提示用深色。 */
+.toast.ok {
+  background: #1f2a37;
+}
+
+/* 提示条出现的动画：从下方 8 像素、完全透明，移动到正常位置。 */
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 8px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+/* 视口窄于 860 像素时，左右两栏改成上下各占一行。 */
+@media (max-width: 860px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+
+  /* 搜索框改成独占一行，避免和筛选标签挤在一起。 */
+  .search {
+    flex: 1 1 100%;
+  }
+}

@@ -1,0 +1,10 @@
+# 本地虚拟环境
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.env
+*.db
+*.sqlite3
+logs/*.log
+.pytest_cache/

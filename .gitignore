@@ -1,0 +1,12 @@
+node_modules/
+.venv/
+__pycache__/
+*.py[cod]
+.env
+*.db
+
+# 前端依赖与产物（产物由 npm run build 生成到 backend/dist）
+frontend/node_modules/
+
+# 运行日志
+backend/logs/*.log

@@ -1,0 +1,70 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: todo-mysql
+    restart: always
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --default-time-zone=+08:00
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root_pass_123}
+      MYSQL_DATABASE: ${DB_NAME:-todo_db}
+      MYSQL_USER: ${DB_USER:-todo}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-todo_pass_123}
+      TZ: Asia/Shanghai
+    volumes:
+      # 数据持久化：容器重建/机器重启数据都在
+      - mysql_data:/var/lib/mysql
+      # 首次初始化时自动执行建表脚本（数据卷已存在时不会重复执行）
+      - ./backend/sql/init.sql:/docker-entrypoint-initdb.d/10-init.sql:ro
+    ports:
+      # 仅本机可连，避免数据库直接暴露公网；如需外部工具连接改成 "3306:3306"
+      - "127.0.0.1:3307:3306"
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      - todo-net
+
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: todo-api
+    restart: always
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      APP_ENV: production
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USER: ${DB_USER:-todo}
+      DB_PASSWORD: ${DB_PASSWORD:-todo_pass_123}
+      DB_NAME: ${DB_NAME:-todo_db}
+      AUTO_CREATE_TABLES: "true"
+      CORS_ORIGINS: ""
+      TZ: Asia/Shanghai
+    ports:
+      - "8000:8000"
+    volumes:
+      # 前端产物：换前端包只需覆盖宿主机的 backend/dist 再 restart api，无需重新 build 镜像
+      - ./backend/dist:/app/dist:ro
+      # 说明：容器内以非 root（uid 10001）运行，若要把 ./backend/logs 映射进来，
+      # 先在宿主机执行：sudo chown -R 10001:10001 backend/logs
+      # 否则应用会自动降级为只输出到 stdout（用 docker compose logs -f api 查看）。
+      - ./backend/logs:/app/logs
+    networks:
+      - todo-net
+
+volumes:
+  mysql_data:
+    driver: local
+
+networks:
+  todo-net:
+    driver: bridge
